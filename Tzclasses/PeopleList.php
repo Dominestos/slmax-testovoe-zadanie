@@ -10,6 +10,7 @@ class PeopleList
 
     public function __construct(PDO $pdo, int $idparam, string $operator)
     {
+        
         if (!class_exists('\Tzclasses\PeopleDB')) {
 
             throw new Exception('Отсутствует подключение к классу PeopleDB');
@@ -17,6 +18,7 @@ class PeopleList
         } else {
 
             $stmt = '';
+
             if ($operator === '>') {
 
                 $stmt = $pdo->prepare("SELECT id from peoples WHERE id > ?");
@@ -42,7 +44,9 @@ class PeopleList
             if ($arrDB) {
 
                 foreach($arrDB as $key => $value) {
+
                     $this->idArray[$key] = $value[0];
+
                 }
 
             } else {
@@ -71,7 +75,9 @@ class PeopleList
         $peopleArr = $this->searchPeoples($pdo);
 
         foreach ($peopleArr as $people) {
+
             $result = $people->deleteFromDB($pdo);
+
         }
 
         return $result;

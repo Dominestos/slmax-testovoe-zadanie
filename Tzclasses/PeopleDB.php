@@ -39,13 +39,19 @@ class PeopleDB
         } elseif ($this->id === 0 && preg_match('/[А-ЯёЁа-яA-Za-z]+/', $this->name) && preg_match('/[А-ЯёЁа-яA-Za-z]+/', $this->surname) && ($this->sex === 0 || $this->sex === 1) && !empty($this->age) && !empty($this->birthCity)) {
 
             if ($this->saveToDB($pdo)) {
-                $stmt = $pdo->prepare("SELECT id FROM peoples WHERE name = :name AND surname = :surname AND birth_date = :birthDate AND sex = :sex AND birth_city = :birthCity");
+                $stmt = $pdo->prepare("SELECT id FROM peoples WHERE name = ? AND surname = ? AND birth_date = ? AND sex = ? AND birth_city = ?");
 
-                $stmt->bindValue(':name', $this->name, PDO::PARAM_STR);
-                $stmt->bindValue(':surname', $this->surname, PDO::PARAM_STR);
-                $stmt->bindValue(':birthDate', $this->age, PDO::PARAM_STR);
-                $stmt->bindValue(':sex', $this->sex, PDO::PARAM_INT);
-                $stmt->bindValue(':birthCity', $this->birthCity, PDO::PARAM_STR);
+                $i = 0;
+                foreach ($this as $property => $value) {
+                    if ($i === 0) {
+                    $i++;
+                    continue;
+                }
+            
+                $stmt->bindValue($i, $this->$property, PDO::PARAM_STR);
+                $i++;
+
+            }
 
                 $stmt->execute();
 
@@ -53,11 +59,14 @@ class PeopleDB
                 $this->id = $arrDB['id'];
 
             } else {
+
                 throw new Exception('Не удалось записать в БД');
+
             }
         } else {
 
             throw new Exception('Проверьте правильность введенных данных');
+
         }
         
 
@@ -65,15 +74,20 @@ class PeopleDB
 
     public function saveToDB(PDO $pdo): bool
     {
-        $stmt = $pdo->prepare("INSERT INTO peoples (name, surname, birth_date, sex, birth_city) values (:name, :surname, :age, :sex, :birthCity)");
+        $stmt = $pdo->prepare("INSERT INTO peoples (name, surname, birth_date, sex, birth_city) values (?, ?, ?, ?, ?)");
+        $i = 0;
+        foreach ($this as $property => $value) {
 
-            $stmt->bindValue(':name', $this->name, PDO::PARAM_STR);
-            $stmt->bindValue(':surname', $this->surname, PDO::PARAM_STR);
-            $stmt->bindValue(':age', $this->age, PDO::PARAM_STR);
-            $stmt->bindValue(':sex', $this->sex, PDO::PARAM_INT);
-            $stmt->bindValue(':birthCity', $this->birthCity, PDO::PARAM_STR);
+            if ($i === 0) {
+                $i++;
+                continue;
+            }
 
-            return $stmt->execute();
+            $stmt->bindValue($i, $this->$property, PDO::PARAM_STR);
+            $i++;
+        }
+
+        return $stmt->execute();
     }
 
     public function deleteFromDB(PDO $pdo): bool
@@ -87,12 +101,12 @@ class PeopleDB
     public static function dateToAge(string $birthday = '2000-03-15'): int
     {
         $timestamp = (int) strtotime($birthday);
-
         $age = (int) date('Y', time()) - (int) date('Y', $timestamp);
 
         if ((int) date('md', $timestamp) > (int) date('md', time())) {
 
             $age--;
+            
         }
 
         return $age;
@@ -100,7 +114,9 @@ class PeopleDB
 
     public static function binaryToSex(int $sex = 0): string
     {
+
         return ($sex !== 0) ? 'муж.' : 'жен.';
+
     }
 
     public function newPeopleInfo()
